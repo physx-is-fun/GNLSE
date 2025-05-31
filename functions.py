@@ -182,7 +182,7 @@ def Simulation(fiber:FIBER_config,simulation:SIMULATION_config,laser: LASER_conf
 
         # Self-steepening correction
         Nonlinearity2 = (fiber.gamma / laser.omega0) * dNL_dt * simulation.dz / 2
-        #A += Nonlinearity2
+        A += Nonlinearity2
 
         # Step 1: Apply spatial FFT (x, y) → (kx, ky)
         A_fft_spatial = fftshift(fft2(ifftshift(A, axes=(0, 1)), axes=(0, 1)), axes=(0, 1))
@@ -221,7 +221,7 @@ def Simulation(fiber:FIBER_config,simulation:SIMULATION_config,laser: LASER_conf
 
         # Self-steepening correction
         Nonlinearity2 = (fiber.gamma / laser.omega0) * dNL_dt * simulation.dz / 2
-        #A_out += Nonlinearity2
+        A_out += Nonlinearity2
 
         A_snapshots.append(A_out.copy())
 
