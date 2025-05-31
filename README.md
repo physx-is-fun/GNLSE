@@ -2,7 +2,7 @@
 
 ## 📜 **Generalized NLSE Used in the Code**
 
-The evolution of the complex envelope $ A(x, y, t; z) $ along the propagation axis $ z $ is governed by:
+The evolution of the complex envelope $A(x, y, t; z)$ along the propagation axis $z$ is governed by:
 
 $$
 \boxed{
