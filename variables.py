@@ -15,6 +15,7 @@ average_power = 600*1e-3                                 # Average power [W]
 alpha_dB_per_m=0.2e-3                                    # Power attenuation coeff in decibel per m. Usual value at 1550 nm is 0.2 dB/km
 effective_mode_diameter=5e-6                             # Effective mode diameter [m] for 780HP single mode fiber @ 850 nm from THORLABS
 nonlinear_refractive_index=2.7e-20                       # Nonlinear refractive index [m^2/W] of fused silica @ 800 nm from https://opg.optica.org/oe/fulltext.cfm?uri=oe-27-26-37940&id=424534
+beam_waist = 100e-6                                      # Beam waist [m]
 beta2=36.16                                              # Dispersion in fs^2/mm (units typically used when referring to beta2) of fused silica @ 800nm from https://www.newport.com/n/the-effect-of-dispersion-on-ultrashort-pulses
 beta2*=(1e-27)                                           # Convert fs^2 to s^2 so everything is in SI units of fused silica @ 800nm
 beta3=27.47                                              # Dispersion in fs^3/mm (units typically used when referring to beta3) of fused silica @ 800nm from https://www.newport.com/n/the-effect-of-dispersion-on-ultrashort-pulses

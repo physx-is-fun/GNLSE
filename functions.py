@@ -2,34 +2,20 @@ from variables import *
 from libraries import *
 from classes import *
 
-# Defining Functions to simulate a Gaussian pulse
-# Function returns pulse intensity or spectrum intensity
 '''
 def getIntensity(amplitude):
-    return n0*epsilon_0*c*np.abs(amplitude)**2
+    return (1/2)*n0*epsilon_0*c*np.abs(amplitude)**2
 '''
 
 def getPower(amplitude):
     return np.abs(amplitude)**2
 
 def getEnergy(A, simulation:SIMULATION_config, fiber:FIBER_config):
-    # A is 3D: shape (nx, ny, nt)
-    intensity = getPower(A)  # shape (nx, ny, nt)
-    # Integrate over t
-    int_t = np.trapz(intensity, dx=simulation.dt, axis=2)
-    # Integrate over x
-    int_x = np.trapz(int_t, dx=simulation.dx, axis=0)
-    # Integrate over y
-    energy = np.trapz(int_x, dx=simulation.dy, axis=0)
+    energy = np.trapz(np.trapz(np.trapz(getPower(A), dx=simulation.dt), dx=simulation.dy), dx=simulation.dx)
     return energy  # In units consistent with field amplitude
 
-def GaussianPulse(time,amplitude,duration, X, Y):
-    return amplitude*np.exp(-2*np.log(2)*((time)/(duration))**2)* np.exp(-X**2 / (0.2e-3)**2) * np.exp(-Y**2 / (0.2e-3)**2)
-
-def FlatTopPulse(time, amplitude, duration, X, Y, radius=1e-4):
-    spatial_profile = np.where(X**2 + Y**2 <= radius**2, 1.0, 0.0)
-    temporal_envelope = np.exp(-2*np.log(2)*(time/duration)**2)
-    return amplitude * temporal_envelope * spatial_profile
+def GaussianPulse(time,amplitude,duration, X, Y, beam_waist):
+    return amplitude*np.exp(-2*np.log(2)*((time)/(duration))**2)* np.exp(-X**2 / (beam_waist)**2) * np.exp(-Y**2 / (beam_waist)**2)
 
 # Getting the spectrum based on a given pulse
 def getSpectrumFromPulse(time,pulse_amplitude):
@@ -132,7 +118,7 @@ def Simulation(fiber:FIBER_config,simulation:SIMULATION_config,laser: LASER_conf
     
     # Initial pulse A(x, y, t)
     X, Y, T = np.meshgrid(simulation.x, simulation.y, simulation.t, indexing='ij')
-    A0 = GaussianPulse(T, laser.amplitude, laser.tau0, X, Y)
+    A0 = GaussianPulse(T,laser.amplitude,laser.tau0, X, Y, laser.beam_waist)
     A0 = A0.astype(np.complex128)
 
     # --- Operators ---
@@ -250,7 +236,7 @@ def plotFirstAndLastPulse(Pulse,simulation:SIMULATION_config):
     final_pulse /= initial_pulse_maximum # Normalize
     # Create a figure for z-t evolution of initial and final pulses
     plt.figure(figsize=(10, 4))
-    # Plot the intensity as a function of time for both the initial and final pulses
+    # Plot the power as a function of time for both the initial and final pulses
     plt.plot(simulation.t_fs, initial_pulse, label='Initial pulse')
     plt.plot(simulation.t_fs, final_pulse, label='Final pulse')
     plt.xlabel('Time [fs]')
@@ -289,8 +275,8 @@ def plotFirstAndLastSpectrum(Pulse,simulation:SIMULATION_config):
     savePlot('Initial vs final spectrum at beam center')
     plt.show()
 
-def plotPeakIntensity(Pulse,simulation:SIMULATION_config):
-    # --- Plot the peak intensity evolution ---
+def plotPeakPower(Pulse,simulation:SIMULATION_config):
+    # --- Plot the peak power evolution ---
     Peak_values = [np.max(getPower(A[simulation.nx // 2, simulation.ny // 2, :])) for A in Pulse]
     plt.figure(figsize=(10, 4))
     plt.plot(simulation.z, Peak_values)
@@ -304,12 +290,12 @@ def plotPeakIntensity(Pulse,simulation:SIMULATION_config):
 def plotXYBeamprofile(Pulse,simulation:SIMULATION_config):
     # --- Beam profile in x-y plane at final z and final time t ---
     final_field = Pulse[-1]  # shape: (nx, ny, nt)
-    # Extract intensity slice at final time
-    intensity_xy = getPower(final_field[:, :, -1])
-    intensity_xy /= np.max(intensity_xy)  # normalize
+    # Extract power slice at final time
+    power_xy = getPower(final_field[:, :, -1])
+    power_xy /= np.max(power_xy)  # normalize
     X, Y = np.meshgrid(simulation.x,simulation.y)
     plt.figure(figsize=(10, 4))
-    plt.contourf(X, Y, intensity_xy, levels=100, cmap='inferno')
+    plt.contourf(X, Y, power_xy, levels=100, cmap='inferno')
     plt.xlabel('x [m]')
     plt.ylabel('y [m]')
     plt.title('Beam profile in x–y plane (at final z, final t)')
@@ -352,13 +338,13 @@ def plotSpectrumEvolution(Pulse,simulation:SIMULATION_config):
     plt.xlabel('Angular frequency [PHz]')
     plt.ylabel('Propagation distance z [m]')
     plt.title('Spectrum evolution at beam center (z–frequency view)')
-    plt.colorbar(label='Intensity [a.u.]')
+    plt.colorbar(label='Power [a.u.]')
     savePlot('Spectrum evolution')
     plt.tight_layout()
     plt.show()
 
 def plotEnergyValues(Energy_values,simulation: SIMULATION_config):
-    # --- Plot the peak intensity evolution ---
+    # --- Plot the peak power evolution ---
     plt.figure(figsize=(10, 4))
     plt.plot(simulation.z, Energy_values)
     plt.xlabel('Propagation distance [m]')

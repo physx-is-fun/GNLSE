@@ -4,7 +4,7 @@ from variables import *
 # Defining a class for the simulation parameters
 # Class for holding info about the laser params
 class LASER_config:
-    def __init__(self,lambda0, tau0, repetition_frequency, average_power, effective_mode_diameter):
+    def __init__(self,lambda0, tau0, repetition_frequency, average_power, beam_waist):
         self.lambda0 = lambda0
         self.omega0 = 2 * np.pi * c / lambda0
         self.frequency0 = self.omega0 / 2 * np.pi
@@ -14,10 +14,10 @@ class LASER_config:
         self.average_power = average_power
         self.pulse_energy = average_power/repetition_frequency
         self.peak_power = self.pulse_energy / tau0
-        self.effective_mode_diameter = effective_mode_diameter
-        self.effective_mode_area=(np.pi/4)*effective_mode_diameter**2
-        self.peak_intensity = self.peak_power / self.effective_mode_area
-        #self.amplitude = np.sqrt((self.peak_intensity)/(n0*epsilon_0*c))
+        self.beam_waist = beam_waist
+        self.area=(np.pi/4)*self.beam_waist**2
+        self.peak_intensity = self.peak_power / self.area
+        #self.amplitude = np.sqrt((2*self.peak_intensity)/(n0*epsilon_0*c))
         self.amplitude = np.sqrt(self.peak_power)  
 
 # Class for holding info about the fiber
