@@ -17,7 +17,7 @@ class LASER_config:
         self.beam_waist = beam_waist
         self.area=(np.pi/4)*self.beam_waist**2
         self.peak_intensity = self.peak_power / self.area
-        #self.amplitude = np.sqrt((2*self.peak_intensity)/(n0*epsilon_0*c))
+        #self.amplitude = np.sqrt((8*self.pulse_energy)/(((np.pi*2*np.log(2))**3/2)*self.tau0*self.beam_waist**2))
         self.amplitude = np.sqrt(self.peak_power)  
 
 # Class for holding info about the fiber

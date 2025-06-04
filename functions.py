@@ -11,11 +11,16 @@ def getPower(amplitude):
     return np.abs(amplitude)**2
 
 def getEnergy(A, simulation:SIMULATION_config, fiber:FIBER_config):
-    energy = np.trapz(np.trapz(np.trapz(getPower(A), dx=simulation.dt), dx=simulation.dy), dx=simulation.dx)
+    I = getPower(A)
+    I_t = np.trapz(I, dx=simulation.dt, axis=2)
+    I_ty = np.trapz(I_t, dx=simulation.dy, axis=1)
+    energy = np.trapz(I_ty, dx=simulation.dx, axis=0)
     return energy  # In units consistent with field amplitude
 
-def GaussianPulse(time,amplitude,duration, X, Y, beam_waist):
-    return amplitude*np.exp(-2*np.log(2)*((time)/(duration))**2)* np.exp(-X**2 / (beam_waist)**2) * np.exp(-Y**2 / (beam_waist)**2)
+def GaussianPulse(time,duration_FWHM, X, Y, beam_waist_FWHM, amplitude):
+    temporal_profile = np.exp(-8*np.log(2)*(time/duration_FWHM)**2)
+    spatial_profile = np.exp(-8*np.log(2)*(X/beam_waist_FWHM)**2) * np.exp(-8*np.log(2)*(Y/beam_waist_FWHM)**2)
+    return amplitude * temporal_profile * spatial_profile
 
 # Getting the spectrum based on a given pulse
 def getSpectrumFromPulse(time,pulse_amplitude):
@@ -118,7 +123,7 @@ def Simulation(fiber:FIBER_config,simulation:SIMULATION_config,laser: LASER_conf
     
     # Initial pulse A(x, y, t)
     X, Y, T = np.meshgrid(simulation.x, simulation.y, simulation.t, indexing='ij')
-    A0 = GaussianPulse(T,laser.amplitude,laser.tau0, X, Y, laser.beam_waist)
+    A0 = GaussianPulse(T,laser.tau0, X, Y, laser.beam_waist, laser.amplitude)
     A0 = A0.astype(np.complex128)
 
     # --- Operators ---
