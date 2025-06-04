@@ -81,5 +81,6 @@ class SIMULATION_config:
         self.z_max = z_max 
         self.z = np.linspace(0, z_max, nz)
         self.dz = z_max / nz
-        #self.dz = 1e-10
-        #self.z = np.linspace(0, self.dz*nz, nz)                                            
+        #self.dz = 1e-9
+        #self.z = np.linspace(0, self.dz*nz, nz)
+        #self.z_max = self.dz*nz                                            
