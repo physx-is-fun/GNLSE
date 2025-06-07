@@ -33,7 +33,7 @@ nt = 2**8                                                # Number of points in t
 t_max = 200e-15                                          # Maximum value in the time axis [s]
 
 # --- Longitudinal z spatial grid ---
-nz = 2**8                                               # Number of points in the z grid
+nz = 2**8                                                # Number of points in the z grid
 z_max = 1e-3                                             # Maximum value in the z axis [m] 
 
 # --- Transverse x spatial grid ---

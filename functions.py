@@ -118,6 +118,35 @@ def refractive_index(omega,fiber:FIBER_config):
     n = np.sqrt(n2)
     return np.where(np.isnan(n), 0, n)
 
+# --- Raman response setup (Hollenbeck–Cantrell model) ---
+def raman_response(simulation:SIMULATION_config):
+    # Parameters from Agrawal, typical for fused silica
+    tau1 = 12.2e-15  # s
+    tau2 = 32e-15  # s
+    f_R = 0.18       # Raman fractional contribution
+    
+    t = simulation.t
+    hR = np.zeros_like(t)
+
+    # Only positive times contribute (causal)
+    t_pos_mask = t >= 0
+    t_pos = t[t_pos_mask]
+
+    # Compute hR only for t >= 0
+    hR_pos = ((tau1**2 + tau2**2) / (tau1 * tau2**2)) * np.exp(-t_pos / tau2) * np.sin(t_pos / tau1)
+
+    # Assign
+    hR[t_pos_mask] = hR_pos
+
+    # Normalize over positive times only
+    norm = np.trapz(hR_pos, t_pos)
+    if norm != 0:
+        hR /= norm
+    else:
+        raise ValueError("Normalization integral is zero, check time vector resolution!")
+    
+    return f_R, hR
+
 # Defining the Simulation function
 def Simulation(fiber:FIBER_config,simulation:SIMULATION_config,laser: LASER_config):
     
@@ -142,6 +171,9 @@ def Simulation(fiber:FIBER_config,simulation:SIMULATION_config,laser: LASER_conf
     Diffraction = np.exp(-1j * KX2KY2[:, :, None] / (2 * laser.k0) * simulation.dz)  # Shape (nx, ny, 1)
 
     Loss = np.exp(-(fiber.alpha_nepers_per_m / 2) * simulation.dz)
+
+    f_R, hR = raman_response(simulation)
+    HR_fft = fft(hR, axis=0)
 
     # --- Storage ---
     A_snapshots = []
@@ -171,9 +203,14 @@ def Simulation(fiber:FIBER_config,simulation:SIMULATION_config,laser: LASER_conf
         # Step 3: IFFT in time (back to time domain, still spatially resolved)
         dNL_dt = fftshift(ifft(ifftshift(NL_fft_time, axes=2), axis=2), axes=2)
 
-        # Self-steepening correction
-        Nonlinearity2 = -(fiber.gamma / laser.omega0) * dNL_dt * simulation.dz / 2
+        # Self-steepening correction (half-step)
+        Nonlinearity2 = 1j * (fiber.gamma / laser.omega0) * dNL_dt * simulation.dz / 2
         A += Nonlinearity2
+
+        # --- Raman Term (half-step)---
+        I_fft = fft(I, axis=2)
+        R_t = np.real(ifft(HR_fft * I_fft, axis=2))
+        #A += 1j * fiber.gamma * f_R * A * R_t * simulation.dz / 2
 
         # Step 1: Apply spatial FFT (x, y) → (kx, ky)
         A_fft_spatial = fftshift(fft2(ifftshift(A, axes=(0, 1)), axes=(0, 1)), axes=(0, 1))
@@ -210,9 +247,14 @@ def Simulation(fiber:FIBER_config,simulation:SIMULATION_config,laser: LASER_conf
         # Step 3: IFFT in time (back to time domain, still spatially resolved)
         dNL_dt = fftshift(ifft(ifftshift(NL_fft_time, axes=2), axis=2), axes=2)
 
-        # Self-steepening correction
-        Nonlinearity2 = -(fiber.gamma / laser.omega0) * dNL_dt * simulation.dz / 2
+        # Self-steepening correction (half-step)
+        Nonlinearity2 = 1j * (fiber.gamma / laser.omega0) * dNL_dt * simulation.dz / 2
         A_out += Nonlinearity2
+
+        # --- Raman Term (half-step)---
+        I_fft = fft(I, axis=2)
+        R_t = np.real(ifft(HR_fft * I_fft, axis=2))
+        #A_out += 1j * fiber.gamma * f_R * A_out * R_t * simulation.dz / 2
 
         A_snapshots.append(A_out.copy())
 
