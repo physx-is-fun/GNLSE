@@ -173,7 +173,6 @@ def Simulation(fiber:FIBER_config,simulation:SIMULATION_config,laser: LASER_conf
     Loss = np.exp(-(fiber.alpha_nepers_per_m / 2) * simulation.dz)
 
     f_R, hR = raman_response(simulation)
-    HR_fft = fft(hR, axis=0)
 
     # --- Storage ---
     A_snapshots = []
@@ -208,9 +207,11 @@ def Simulation(fiber:FIBER_config,simulation:SIMULATION_config,laser: LASER_conf
         A += Nonlinearity2
 
         # --- Raman Term (half-step)---
-        I_fft = fft(I, axis=2)
-        R_t = np.real(ifft(HR_fft * I_fft, axis=2))
-        #A += 1j * fiber.gamma * f_R * A * R_t * simulation.dz / 2
+        # Apply 1D convolution along time axis for all (x, y)
+        raman_conv = convolve1d(I, hR, axis=2, mode='constant')
+        raman_factor = (1 - f_R) * I + f_R * raman_conv * simulation.dt
+        Nonlinearity3 = np.exp(1j * fiber.gamma * raman_factor * simulation.dz / 2)
+        A *= Nonlinearity3
 
         # Step 1: Apply spatial FFT (x, y) → (kx, ky)
         A_fft_spatial = fftshift(fft2(ifftshift(A, axes=(0, 1)), axes=(0, 1)), axes=(0, 1))
@@ -252,9 +253,11 @@ def Simulation(fiber:FIBER_config,simulation:SIMULATION_config,laser: LASER_conf
         A_out += Nonlinearity2
 
         # --- Raman Term (half-step)---
-        I_fft = fft(I, axis=2)
-        R_t = np.real(ifft(HR_fft * I_fft, axis=2))
-        #A_out += 1j * fiber.gamma * f_R * A_out * R_t * simulation.dz / 2
+        # Apply 1D convolution along time axis for all (x, y)
+        raman_conv = convolve1d(I, hR, axis=2, mode='constant')
+        raman_factor = (1 - f_R) * I + f_R * raman_conv * simulation.dt
+        Nonlinearity3 = np.exp(1j * fiber.gamma * raman_factor * simulation.dz / 2)
+        A *= Nonlinearity3
 
         A_snapshots.append(A_out.copy())
 
