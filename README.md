@@ -25,7 +25,7 @@ where:
 - $\gamma$: Kerr nonlinear coefficient
 - $\omega_0$: central angular frequency
 - $\alpha$: linear absorption coefficient
-- $ T_R $: Raman response
+- $T_R$: Raman response
 
 This makes our system capable of modeling ultrashort laser pulse propagation in **nonlinear, lossy media**. There are two ways to derive the GNLSE: from the Agrawal book and from the Ursula Keller book, because it depends on the Fourier transform convention. I choosed Ursula Keller's notation, because python's FFT and IFFT library incorporates the Ursula Keller's convention.
 
