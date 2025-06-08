@@ -10,12 +10,40 @@ def getIntensity(amplitude):
 def getIntensity(amplitude):
     return np.abs(amplitude)**2
 
+'''
 def getEnergy(A, simulation:SIMULATION_config, fiber:FIBER_config):
     I = getIntensity(A)
     I_t = np.trapz(I, dx=simulation.dt, axis=2)
     I_ty = np.trapz(I_t, dx=simulation.dy, axis=1)
     energy = np.trapz(I_ty, dx=simulation.dx, axis=0)
     return energy
+'''
+    
+def getPhotonNumber(A, simulation:SIMULATION_config, fiber:FIBER_config, laser:LASER_config):
+    """
+    Calculate photon number using:
+        N = ∭ |A(x, y, t)|^2 / (ħω) dx dy dt
+    """
+    I = getIntensity(A)  # shape: (nx, ny, nt)
+    omega = simulation.w + laser.omega0  # shape: (nt,)
+    photon_energy = hbar * omega  # shape: (nt,)
+
+    # Broadcast photon energy to match I shape
+    photon_energy = photon_energy[None, None, :]  # shape: (1, 1, nt)
+
+    I_over_hw = I / photon_energy  # shape: (nx, ny, nt)
+
+    # Integrate over t
+    int_t = np.trapz(I_over_hw, simulation.t, axis=2)  # shape: (nx, ny)
+
+    # Integrate over y
+    int_y = np.trapz(int_t, simulation.y, axis=1)  # shape: (nx,)
+
+    # Integrate over x
+    photon_number = np.trapz(int_y, simulation.x, axis=0)  # scalar
+
+    return photon_number
+
 
 def GaussianPulse(time,duration_FWHM, X, Y, beam_waist_FWHM, amplitude):
     temporal_profile = np.exp(-4*np.log(2)*(time/duration_FWHM)**2)
@@ -181,8 +209,8 @@ def Simulation(fiber:FIBER_config,simulation:SIMULATION_config,laser: LASER_conf
     # --- Storage ---
     A_snapshots = []
     A_snapshots.append(A0.copy())
-    Energy_values = []
-    Energy_values.append(getEnergy(A0.copy(),simulation,fiber))
+    PhotonNumber_values = []
+    PhotonNumber_values.append(getPhotonNumber(A0.copy(),simulation,fiber,laser))
 
     # --- Main loop ---
     for step_z in range(0,simulation.nz - 1):
@@ -265,13 +293,13 @@ def Simulation(fiber:FIBER_config,simulation:SIMULATION_config,laser: LASER_conf
 
         A_snapshots.append(A_out.copy())
 
-        Energy_values.append(getEnergy(A_out,simulation,fiber))
+        PhotonNumber_values.append(getPhotonNumber(A0.copy(),simulation,fiber,laser))
 
         delta = int(round(step_z*100/nz)) - int(round((step_z-1)*100/nz))
         if delta == 1:
             print(str(int(round(step_z*100/nz))) + " % ready")
     # return results
-    return A_snapshots, Energy_values
+    return A_snapshots, PhotonNumber_values
 
 def savePlot(fileName):
     if not os.path.isdir('results/'):
@@ -397,13 +425,13 @@ def plotSpectrumEvolution(Pulse,simulation:SIMULATION_config):
     plt.tight_layout()
     plt.show()
 
-def plotEnergyValues(Energy_values,simulation: SIMULATION_config):
+def plotPhotonNumberValues(PhotonNumber_values,simulation: SIMULATION_config):
     # --- Plot the peak intensity evolution ---
     plt.figure(figsize=(10, 4))
-    plt.plot(simulation.z, Energy_values)
+    plt.plot(simulation.z, PhotonNumber_values)
     plt.xlabel('Propagation distance [m]')
-    plt.ylabel('Energy [J]')
-    plt.title('Energy evolution')
-    savePlot('Energy evolution')
+    plt.ylabel('Photon number [count]')
+    plt.title('Photon number conservation')
+    savePlot('Photon number conservation')
     plt.tight_layout()
     plt.show()

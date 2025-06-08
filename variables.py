@@ -4,6 +4,7 @@ from libraries import *
 c = 3e8                                                  # Speed of light in vacuum [m/s]
 n0 = 1.0                                                 # Refractive index of air
 epsilon_0 = 8.854e-12                                    # Dielectric constant [F/m]
+hbar = 1.0545718e-34                                     # Planck constant [J·s]
 
 # --- Initialize Gaussian pulse parameters (OCTAVIUS-85M-HP from THORLABS) https://www.thorlabs.com/thorproduct.cfm?partnumber=OCTAVIUS-85M-HP ---
 lambda0 = 800e-9                                         # Pulse central wavelengt [m]
