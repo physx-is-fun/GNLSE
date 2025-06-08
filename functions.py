@@ -118,9 +118,13 @@ def refractive_index(omega,fiber:FIBER_config):
     n = np.sqrt(n2)
     return np.where(np.isnan(n), 0, n)
 
-# --- Raman response setup (Hollenbeck–Cantrell model) ---
+# --- Raman response setup ---
 def raman_response(simulation:SIMULATION_config):
-    # Parameters from Agrawal, typical for fused silica
+    '''
+    K. J. Blow, D. Wood, Theoretical description of transient
+    stimulated Raman scattering in optical fibers.  IEEE J. Quantum Electron.,
+    25 (1989) 1159, https://doi.org/10.1109/3.40655.
+    '''
     tau1 = 12.2e-15  # s
     tau2 = 32e-15  # s
     f_R = 0.18       # Raman fractional contribution
