@@ -342,11 +342,6 @@ def plotFirstAndLastSpectrum(Pulse,simulation:SIMULATION_config):
     final_spectrum /= initial_spectrum_maximum  # Normalize
     # Plot the comparison of initial and final spectrum
     plt.figure(figsize=(10, 4))
-    dt = simulation.dt              
-    f_nyquist = 1 / (2 * dt)
-    w_nyquist_PHz = f_nyquist * 1e-15 * 2 * np.pi
-    #plt.axvline(w_nyquist_PHz, linestyle='--', color='r', label='Nyquist limit')
-    #plt.axvline(-w_nyquist_PHz, linestyle='--', color='r', label='Nyquist limit')
     plt.plot(simulation.f_PHz_rel*2*np.pi, initial_spectrum, label='Initial spectrum')
     plt.plot(simulation.f_PHz_rel*2*np.pi, final_spectrum, label='Final spectrum')
     plt.xlabel('Angular frequency [PHz]')
@@ -423,6 +418,38 @@ def plotSpectrumEvolution(Pulse,simulation:SIMULATION_config):
     plt.colorbar(label='Intensity [a.u.]')
     savePlot('Spectrum evolution')
     plt.tight_layout()
+    plt.show()
+
+def plotWavelength(Pulse, simulation: SIMULATION_config, laser: LASER_config):
+    # Initial vs Final spectrum as function of wavelength along z-t, both at x = nx//2, y = ny//2
+    # Compute temporal FFT of the initial pulse at (x=nx//2, y=ny//2)
+    initial_pulse = Pulse[0][simulation.nx // 2, simulation.ny // 2, :]
+    final_pulse = Pulse[-1][simulation.nx // 2, simulation.ny // 2, :]
+    initial_spectrum = getIntensity(fftshift(fft(initial_pulse)))  # shape: (nt,)
+    final_spectrum = getIntensity(fftshift(fft(final_pulse)))  # shape: (nt,)
+    # Define angular frequency and corresponding wavelength
+    omega = simulation.w + laser.omega0  # [rad/s], shape: (nt,)
+    omega = np.where(np.abs(omega) < 1e-12, 1e-12, omega)
+    wavelength = 2 * np.pi * c / omega  # [m], shape: (nt,)
+    # Convert spectral intensity I(ω) to I(λ) using: I(λ) ∝ I(ω) * dω/dλ ∝ I(ω) * (2πc / λ²)
+    initial_spectrum_lambda = initial_spectrum * 2 * np.pi * c / wavelength**2
+    final_spectrum_lambda = final_spectrum * 2 * np.pi * c / wavelength**2
+    # Apply wavelength window
+    wavelength0 = simulation.lambda0
+    valid = (wavelength > 0.5 * wavelength0) & (wavelength < 1.5 * wavelength0)
+    # Select valid portion
+    wavelength_valid = wavelength[valid]
+    initial_spectrum_valid = initial_spectrum_lambda[valid]
+    final_spectrum_valid = final_spectrum_lambda[valid]
+    # Plot
+    plt.figure(figsize=(10, 4))
+    plt.plot(wavelength_valid * 1e9, initial_spectrum_valid / np.max(initial_spectrum_valid), label="Initial Spectrum")  # Optional: convert to nm
+    plt.plot(wavelength_valid * 1e9, final_spectrum_valid / np.max(initial_spectrum_valid), label="Final Spectrum")  # Optional: convert to nm
+    plt.title("Intensity vs. Wavelength")
+    plt.xlabel("Wavelength [nm]")
+    plt.ylabel("Normalized Intensity")
+    plt.legend()
+    savePlot("Intensity as function of wavelength")
     plt.show()
 
 def plotPhotonNumberValues(PhotonNumber_values,simulation: SIMULATION_config):

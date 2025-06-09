@@ -61,6 +61,7 @@ class SIMULATION_config:
         self.f = self.w / (2 * np.pi)
         self.f_rel = self.f + self.frequency0
         self.f_PHz_rel = self.f_PHz + self.frequency0 * 1e-15
+        self.lambda0 = lambda0
 
         # --- Transverse x spatial grid ---
         self.nx = nx
